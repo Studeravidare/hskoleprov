@@ -1,0 +1,45 @@
+.material-card {
+  background: #fdfdfd;
+  border: 1px solid #d0d5dd;
+  border-top: 4px solid #035c67;
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.material-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #ffb71b;
+  margin-bottom: 0.6rem;
+}
+
+.material-title {
+  font-size: calc(clamp(1rem, 1.5vw, 1.1rem) * var(--font-scale, 1));
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  color: #035c67;
+}
+
+.material-text {
+  font-size: calc(0.95rem * var(--font-scale, 1));
+  line-height: 1.7;
+  color: #333;
+  white-space: pre-wrap;
+}
+
+.material-imgs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.material-imgs img {
+  width: 100%;
+  border-radius: 8px;
+  object-fit: contain;
+  background: #fafafa;
+}
