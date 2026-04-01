@@ -49,14 +49,14 @@ Jag har en Supabase-databas för högskoleprovet. Du ska ta emot PDF:er med prov
 | Fält                   | Strategi                                                                                                            |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `questions.image_url`  | **Genereras automatiskt** utifrån URL-mönstret                                                                      |
-| `options[i].image_url` | **Genereras automatiskt** utifrån URL-mönstret                                                                      |
+| `options[i].image`     | **Genereras automatiskt** utifrån URL-mönstret                                                                      |
 | `materials.image_urls` | **Alltid `'[]'`** – DTK-diagram kan delas upp i flera bilder vid uppladdning, så dessa fylls i manuellt i efterhand |
 
 ---
 
 ### Bucket: `question_specific_images`
 
-Används för `questions.image_url` och `options[i].image_url`.
+Används för `questions.image_url` och `options[i].image`.
 
 **Bas-URL:**
 
@@ -114,20 +114,16 @@ https://cbrlsklfpkcehjcbkbnh.supabase.co/storage/v1/object/public/question_speci
 ```json
 [
   {
-    "image_url": "https://cbrlsklfpkcehjcbkbnh.supabase.co/storage/v1/object/public/question_specific_images/2025/vt/delprov%203/9a.png",
-    "label": "A"
+    "image": "https://cbrlsklfpkcehjcbkbnh.supabase.co/storage/v1/object/public/question_specific_images/2025/vt/delprov%203/9a.png"
   },
   {
-    "image_url": "https://cbrlsklfpkcehjcbkbnh.supabase.co/storage/v1/object/public/question_specific_images/2025/vt/delprov%203/9b.png",
-    "label": "B"
+    "image": "https://cbrlsklfpkcehjcbkbnh.supabase.co/storage/v1/object/public/question_specific_images/2025/vt/delprov%203/9b.png"
   },
   {
-    "image_url": "https://cbrlsklfpkcehjcbkbnh.supabase.co/storage/v1/object/public/question_specific_images/2025/vt/delprov%203/9c.png",
-    "label": "C"
+    "image": "https://cbrlsklfpkcehjcbkbnh.supabase.co/storage/v1/object/public/question_specific_images/2025/vt/delprov%203/9c.png"
   },
   {
-    "image_url": "https://cbrlsklfpkcehjcbkbnh.supabase.co/storage/v1/object/public/question_specific_images/2025/vt/delprov%203/9d.png",
-    "label": "D"
+    "image": "https://cbrlsklfpkcehjcbkbnh.supabase.co/storage/v1/object/public/question_specific_images/2025/vt/delprov%203/9d.png"
   }
 ]
 ```
@@ -138,13 +134,11 @@ https://cbrlsklfpkcehjcbkbnh.supabase.co/storage/v1/object/public/question_speci
 [
   { "text": "A: textalternativ" },
   {
-    "image_url": "https://cbrlsklfpkcehjcbkbnh.supabase.co/storage/v1/object/public/question_specific_images/2025/vt/delprov%203/5b.png",
-    "label": "B"
+    "image": "https://cbrlsklfpkcehjcbkbnh.supabase.co/storage/v1/object/public/question_specific_images/2025/vt/delprov%203/5b.png"
   },
   { "text": "C: textalternativ" },
   {
-    "image_url": "https://cbrlsklfpkcehjcbkbnh.supabase.co/storage/v1/object/public/question_specific_images/2025/vt/delprov%203/5d.png",
-    "label": "D"
+    "image": "https://cbrlsklfpkcehjcbkbnh.supabase.co/storage/v1/object/public/question_specific_images/2025/vt/delprov%203/5d.png"
   }
 ]
 ```
@@ -153,62 +147,67 @@ https://cbrlsklfpkcehjcbkbnh.supabase.co/storage/v1/object/public/question_speci
 
 ## SQL-format (viktigt!)
 
-Använd alltid CTE-mönster med `RETURNING id` för materials:
+Filen är uppdelad i **två separata block** som körs i ordning:
+
+1. Först alla `INSERT INTO materials` (en per text/diagram)
+2. Sedan alla `INSERT INTO questions` (en per fråga)
+
+### ⚠️ Kritisk regel: Använd ALDRIG CTE-namn i questions-inserts
+
+CTEs (`WITH mat_x AS (...)`) lever bara inom den SQL-sats de definierades i.
+En separat `INSERT INTO questions` kan **inte** referera till `mat_x` – det ger felet `relation "mat_x" does not exist`.
+
+**Rätt sätt att koppla material_id** är via subquery direkt mot `materials`-tabellen:
 
 ```sql
-WITH
--- LÄS-material (text, ingen bild):
-mat_las AS (
-  INSERT INTO materials (part, title, text_content, image_urls, year, term, exam_part)
-  VALUES ('LÄS', 'Textens rubrik', $$Hela texten här...$$, null, 2025, 'vt', 2)
-  RETURNING id
-),
--- DTK-material (bild – image_urls alltid null, fylls i manuellt):
-mat_dtk AS (
-  INSERT INTO materials (part, title, text_content, image_urls, year, term, exam_part)
-  VALUES ('DTK', 'Diagramtitel', null, '[]', 2025, 'vt', 3)
-  RETURNING id
-)
+(SELECT id FROM materials
+ WHERE title = 'Textens rubrik'
+   AND year = 2025 AND term = 'vt' AND exam_part = 4)
+```
 
+### Del 1 – Materials
+
+Varje material är ett eget `INSERT`-statement. Ingen CTE behövs.
+
+```sql
+-- LÄS-material (text, ingen bild):
+INSERT INTO materials (part, title, text_content, image_urls, year, term, exam_part)
+VALUES ('LÄS', 'Textens rubrik', $$Hela texten här...$$, null, 2025, 'vt', 4);
+
+-- DTK-material (bild – image_urls = '[]', fylls i manuellt):
+INSERT INTO materials (part, title, text_content, image_urls, year, term, exam_part)
+VALUES ('DTK', 'Diagramtitel 29-31', null, '[]', 2025, 'vt', 3);
+```
+
+### Del 2 – Questions
+
+Varje fråga är ett eget `INSERT`-statement. `material_id` sätts alltid via subquery:
+
+```sql
 INSERT INTO questions
   (year, term, exam_part, category, question_number, image_url,
    question_text, options, correct_index, explanation, material_id)
-VALUES
+VALUES (2025, 'vt', 4, 'LÄS', 11, null,
+  'Vad visar exemplet Gun Widmark?',
+  '[{"text":"A: ..."},{"text":"B: ..."},{"text":"C: ..."},{"text":"D: ..."}]',
+  2, 'Förklaring här.',
+  (SELECT id FROM materials WHERE title = 'Textens rubrik' AND year = 2025 AND term = 'vt' AND exam_part = 4));
 
--- Fråga med textbaserade alternativ, inget material:
-(2025, 'vt', 2, 'ORD', 1, null,
- 'basal',
- '[{"text":"A: hållbar"},{"text":"B: underförstådd"},{"text":"C: vardaglig"},{"text":"D: grundläggande"},{"text":"E: genomtänkt"}]',
- 3, 'Basal betyder grundläggande.', null),
-
--- Fråga med bild i frågetexten:
-(2025, 'vt', 3, 'XYZ', 12,
- 'https://cbrlsklfpkcehjcbkbnh.supabase.co/storage/v1/object/public/question_specific_images/2025/vt/delprov%203/12.png',
- 'Hur stor är den skuggade arean?',
- '[{"text":"A: 2π cm²"},{"text":"B: 2,5π cm²"},{"text":"C: 3π cm²"},{"text":"D: 3,5π cm²"}]',
- 1, 'Förklaring.', null),
-
--- Fråga med bildbaserade alternativ:
-(2025, 'vt', 3, 'XYZ', 9, null,
- 'Linjen L har ekvationen y + 2x − 2 = 0. Vilket svarsalternativ visar linjen L?',
- '[{"image_url":"https://cbrlsklfpkcehjcbkbnh.supabase.co/storage/v1/object/public/question_specific_images/2025/vt/delprov%203/9a.png","label":"A"},
-   {"image_url":"https://cbrlsklfpkcehjcbkbnh.supabase.co/storage/v1/object/public/question_specific_images/2025/vt/delprov%203/9b.png","label":"B"},
-   {"image_url":"https://cbrlsklfpkcehjcbkbnh.supabase.co/storage/v1/object/public/question_specific_images/2025/vt/delprov%203/9c.png","label":"C"},
-   {"image_url":"https://cbrlsklfpkcehjcbkbnh.supabase.co/storage/v1/object/public/question_specific_images/2025/vt/delprov%203/9d.png","label":"D"}]',
- 2, 'y = −2x + 2: riktningskoefficient −2 och y-intercept 2.', null),
-
--- Fråga med LÄS-material:
-(2025, 'vt', 2, 'LÄS', 11, null,
- 'Frågetexten här?',
- '[{"text":"A: alternativ"},{"text":"B: alternativ"},{"text":"C: alternativ"},{"text":"D: alternativ"}]',
- 2, 'Förklaring.', (SELECT id FROM mat_las));
+-- ORD/MEK/XYZ/KVA/NOG har inget material – sätt null:
+INSERT INTO questions
+  (year, term, exam_part, category, question_number, image_url,
+   question_text, options, correct_index, explanation, material_id)
+VALUES (2025, 'vt', 4, 'ORD', 1, null,
+  'basal',
+  '[{"text":"A: hållbar"},{"text":"B: underförstådd"},{"text":"C: vardaglig"},{"text":"D: grundläggande"},{"text":"E: genomtänkt"}]',
+  3, 'Basal betyder grundläggande.', null);
 ```
 
 ---
 
 ## Regler
 
-- **UUID**: Aldrig manuella UUID:s – låt databasen skapa dem via CTE
+- **UUID**: Aldrig manuella UUID:s – låt databasen skapa dem automatiskt
 - **correct_index**: Alltid 0-baserat (A=0, B=1, C=2, D=3, E=4)
 - **ORD**: 5 alternativ (A–E)
 - **LÄS, MEK, ELF, DTK**: 4 alternativ (A–D)
@@ -218,6 +217,7 @@ VALUES
 - **DTK-material**: `text_content = null`, `image_urls = '[]'` (fylls i manuellt)
 - **ORD, MEK, XYZ, KVA, NOG**: `material_id = null`
 - **Facit**: Hämta alltid rätt svar från det bifogade facit-PDF:et
+- **ELF (Q31–40 i verbal del)**: Genereras aldrig – upphovsrättsskyddat material som inte kan publiceras. Nämn i sammanfattningen att ELF är utelämnat, be aldrig om komplettering.
 - **Fråge- och alternativbilder**: Generera URL direkt – lämna aldrig `null` när år/termin/provpass/frågenummer är kända
 
 ---
@@ -238,10 +238,10 @@ Avsluta alltid med:
 ## Kräver manuell åtgärd
 
 ### materials.image_urls som ska fyllas i:
-| Material        | Täcker frågor |
-|-----------------|---------------|
-| mat_ejder       | Q32–34        |
-| mat_hp_resultat | Q35–37        |
+| Material            | Täcker frågor |
+|---------------------|---------------|
+| Ejder i skärgården  | Q32–34        |
+| HP-resultat         | Q35–37        |
 
 ### Frågor som behöver skärmdump (ej genererade):
 | Fråga | Anledning                          |
@@ -249,23 +249,30 @@ Avsluta alltid med:
 | Q3    | Matematiskt uttryck oläsbart i PDF |
 ```
 
-Om inga frågor saknades och inga material behöver påminnas om:
+Om inga frågor saknades och inga DTK-material finns:
 
 ```
 ## Kräver manuell åtgärd
-Fyll i image_urls för DTK-material efter bilduppladdning (se materials-CTE:erna ovan).
+Inga DTK-material i detta provpass. Inga frågor saknas.
+```
+
+Om DTK-material finns men inga frågor saknas:
+
+```
+## Kräver manuell åtgärd
+Fyll i image_urls för DTK-material efter bilduppladdning (se materials-inserts ovan).
 ```
 
 ---
 
 ## Provpassstruktur (verbal del)
 
-| Kategori | Frågor | Provpass |
-| -------- | ------ | -------- |
-| ORD      | 1–10   | Verbal   |
-| LÄS      | 11–20  | Verbal   |
-| MEK      | 21–30  | Verbal   |
-| ELF      | 31–40  | Verbal   |
+| Kategori | Frågor | Provpass | Genereras               |
+| -------- | ------ | -------- | ----------------------- |
+| ORD      | 1–10   | Verbal   | ✅                      |
+| LÄS      | 11–20  | Verbal   | ✅                      |
+| MEK      | 21–30  | Verbal   | ✅                      |
+| ELF      | 31–40  | Verbal   | ❌ Aldrig – upphovsrätt |
 
 ## Provpassstruktur (kvantitativ del)
 
@@ -285,8 +292,9 @@ När jag skickar ett provhäfte (PDF) + facit (PDF), ska du:
 1. Läsa provhäftet och identifiera alla texter och frågor
 2. Hämta rätt svar från facit
 3. För varje fråga – avgör om frågetext eller svarsalternativ innehåller bilder och bygg URL:en direkt
-4. DTK-material: sätt alltid `image_urls = null`
+4. DTK-material: sätt alltid `image_urls = '[]'`
 5. Verifiera matematiska uttryck – be om skärmdump vid tvekan
-6. Generera en komplett `.sql`-fil med CTE-mönstret ovan
-7. Avsluta med sammanfattningen "Kräver manuell åtgärd"
-8. Leverera filen som nedladdningsbar output
+6. Generera en komplett `.sql`-fil med strukturen: materials-inserts först, questions-inserts sedan
+7. Koppla `material_id` i questions alltid via subquery mot `materials`-tabellen – aldrig via CTE-namn
+8. Avsluta med sammanfattningen "Kräver manuell åtgärd"
+9. Leverera filen som nedladdningsbar output
