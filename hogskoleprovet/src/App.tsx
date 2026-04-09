@@ -173,12 +173,6 @@ const App: React.FC = () => {
       )}
 
       <div className="app">
-        {/* Header */}
-        <div className="header">
-          <div className="header-logo">Högskoleverket</div>
-          <div className="header-dot" />
-        </div>
-
         {/* Urvalssskärm: Välj läge, kategorier och inställningar */}
         {quiz.screen === "select" && (
           <SelectScreen
