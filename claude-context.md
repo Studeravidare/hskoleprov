@@ -94,6 +94,10 @@ https://cbrlsklfpkcehjcbkbnh.supabase.co/storage/v1/object/public/question_speci
 
 **Regel: Fyll alltid i dessa URL:er direkt i SQL. Lämna aldrig `null` när år/termin/provpass/frågenummer är kända.**
 
+### ⚠️ DTK-frågor har aldrig egen image_url
+
+DTK-frågor har alltid `image_url = null` på frågenivå. Bildmaterialet tillhör `materials.image_urls`, inte `questions.image_url`. Sätt aldrig en URL på en DTK-fråga såvida inte frågan innehåller en separat bild som är unik för just den frågan och inte ingår i det gemensamma diagrammet/tabellen. (Kan fortfarande ha svar som bilder)
+
 ---
 
 ## Format för `options` (jsonb)
@@ -219,6 +223,7 @@ VALUES (2025, 'vt', 4, 'ORD', 1, null,
 - **Facit**: Hämta alltid rätt svar från det bifogade facit-PDF:et
 - **ELF (Q31–40 i verbal del)**: Genereras aldrig – upphovsrättsskyddat material som inte kan publiceras. Nämn i sammanfattningen att ELF är utelämnat, be aldrig om komplettering.
 - **Fråge- och alternativbilder**: Generera URL direkt – lämna aldrig `null` när år/termin/provpass/frågenummer är kända
+- **question_number**: Ska alltid matcha det nummer som är tryckt i provhäftet. Räkna aldrig frågenummer utifrån position i PDF:en – PDF-layout kan avvika från faktisk numrering.
 
 ---
 
@@ -227,6 +232,15 @@ VALUES (2025, 'vt', 4, 'ORD', 1, null,
 - Om ett matematiskt uttryck inte kan tolkas med säkerhet från PDF-texten: **generera inte ett gissningsvis insert**
 - Skriv istället: **"Fråga [nr] kunde inte tolkas – kan du skicka en skärmdump?"**
 - Fortsätt med övriga frågor, samla alla otolkbara i slutlistan
+
+### ⚠️ Verifiera alltid beräknat svar mot facit
+
+För varje matematisk fråga (XYZ, KVA, NOG) där uttrycket kan läsas: **lös frågan och kontrollera att beräknat svar matchar facit-svaret** innan insert genereras.
+
+- Om beräknat svar **matchar** facit → generera insert normalt, **utan** att visa uträkningen
+- Om beräknat svar **inte matchar** facit → generera **inte** ett insert. Skriv istället: **"Fråga [nr] – beräknat svar ([X]) matchar inte facit ([Y]). Kan du skicka en skärmdump?"** och visa uträkningen som visade avvikelsen. Samla frågan i slutlistan.
+
+Detta fångar fall där PDF-layouten förvrängt uttrycket tillräckligt för att ge en felaktig tolkning, även när texten till synes är läsbar.
 
 ---
 
@@ -244,9 +258,10 @@ Avsluta alltid med:
 | HP-resultat         | Q35–37        |
 
 ### Frågor som behöver skärmdump (ej genererade):
-| Fråga | Anledning                          |
-|-------|------------------------------------|
-| Q3    | Matematiskt uttryck oläsbart i PDF |
+| Fråga | Anledning                                        |
+|-------|--------------------------------------------------|
+| Q3    | Matematiskt uttryck oläsbart i PDF               |
+| Q18   | Beräknat svar (X) matchar inte facit (Y)         |
 ```
 
 Om inga frågor saknades och inga DTK-material finns:
@@ -291,9 +306,9 @@ När jag skickar ett provhäfte (PDF) + facit (PDF), ska du:
 
 1. Läsa provhäftet och identifiera alla texter och frågor
 2. Hämta rätt svar från facit
-3. För varje fråga – avgör om frågetext eller svarsalternativ innehåller bilder och bygg URL:en direkt
+3. För varje fråga – avgör om frågetext eller svarsalternativ innehåller bilder och bygg URL:en direkt. **DTK-frågor får aldrig image_url på frågenivå (se regel ovan).**
 4. DTK-material: sätt alltid `image_urls = '[]'`
-5. Verifiera matematiska uttryck – be om skärmdump vid tvekan
+5. För varje matematisk fråga: lös den och verifiera att beräknat svar matchar facit – be om skärmdump om de inte stämmer
 6. Generera en komplett `.sql`-fil med strukturen: materials-inserts först, questions-inserts sedan
 7. Koppla `material_id` i questions alltid via subquery mot `materials`-tabellen – aldrig via CTE-namn
 8. Avsluta med sammanfattningen "Kräver manuell åtgärd"
