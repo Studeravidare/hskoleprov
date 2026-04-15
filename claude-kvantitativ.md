@@ -105,14 +105,12 @@ Om alternativens innehåll inte kan läsas tydligt från PDF:en: be om skärmdum
 Om frågetext **eller svarsalternativ** inte kan läsas med säkerhet:
 
 - Generera **inte** ett insert
-- Skriv: **"Fråga [nr] kunde inte tolkas – kan du skicka en skärmdump?"**
-- Samla i slutlistan
+- Lägg frågan i listan över utestående frågor
+- **Vänta** med att generera SQL-filen tills alla skärmdumpar har mottagits (se Instruktion i gemensamma regler)
 
 ### Steg 2 – Lös och verifiera mot facit
 
 För varje fråga där uttrycket kan läsas: lös frågan och kontrollera att beräknat svar matchar facit **innan insert genereras**.
 
 - Matchar ✅ → generera insert normalt, utan att visa uträkningen
-- Matchar inte ❌ → generera **inte** insert. Skriv: **"Fråga [nr] – beräknat svar ([X]) matchar inte facit ([Y]). Kan du skicka en skärmdump?"** och visa uträkningen. Samla i slutlistan.
-
-Detta fångar fall där PDF-layouten förvrängt uttrycket trots att texten till synes är läsbar.
+- Matchar inte ❌ → generera **inte** insert. Lägg frågan i listan över utestående frågor med kommentaren "beräknat svar ([X]) matchar inte facit ([Y])" och visa uträkningen. **Vänta** med att generera SQL-filen tills skärmdump har mottagits och verifierats.

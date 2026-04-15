@@ -186,9 +186,9 @@ VALUES (2024, 'vt', 5, 'XYZ', 1, null,
 
 Om frågetext **eller svarsalternativ** inte kan läsas med säkerhet från PDF:en:
 
-- Generera **inte** ett insert
-- Skriv: **"Fråga [nr] kunde inte tolkas – kan du skicka en skärmdump?"**
-- Samla frågan i slutlistan
+- Generera **inte** ett insert för den frågan
+- Notera frågan i listan över utestående frågor: **"Fråga [nr] – [anledning]"**
+- **Generera inte SQL-filen** förrän alla utestående frågor är lösta (se Instruktion nedan)
 
 **Viktigt:** Anta aldrig att svarsalternativ är bilder utan att ha sett dem. Om alternativens innehåll är oklart från PDF:en – be om skärmdump.
 
@@ -235,7 +235,19 @@ När du tar emot ett provhäfte (PDF) + facit (PDF):
 
 1. Läs provhäftet och identifiera alla texter och frågor
 2. Hämta rätt svar från facit
-3. Generera en komplett `.sql`-fil: materials-inserts först, questions-inserts sedan
-4. Koppla `material_id` alltid via subquery – aldrig via CTE-namn
-5. Avsluta med sammanfattningen "Kräver manuell åtgärd"
-6. Leverera filen som nedladdningsbar output
+3. Om **inga** frågor kräver skärmdump: generera direkt en komplett `.sql`-fil och leverera den som nedladdningsbar output
+4. Om **en eller flera** frågor kräver skärmdump:
+   - Generera **inte** SQL-filen ännu
+   - Lista alla frågor som behöver skärmdump (med anledning), t.ex.:
+     ```
+     Följande frågor kunde inte tolkas – skicka skärmdumpar så genererar jag SQL-filen:
+     - Fråga 7: svarsalternativ oklara i PDF
+     - Fråga 14: beräknat svar (3) matchar inte facit (4) – se uträkning nedan
+     ```
+   - Vänta på att användaren skickar skärmdumparna
+5. När skärmdumpar har mottagits: tolka dem, verifiera mot facit vid behov, och kontrollera att **alla** utestående frågor nu är lösta
+   - Om fler frågor fortfarande är oklara: be om ytterligare skärmdumpar och vänta igen
+   - När alla frågor är lösta: generera den kompletta `.sql`-filen
+6. Koppla `material_id` alltid via subquery – aldrig via CTE-namn
+7. Avsluta med sammanfattningen "Kräver manuell åtgärd"
+8. Leverera filen som nedladdningsbar output
