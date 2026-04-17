@@ -206,6 +206,13 @@ Avsluta alltid med:
 |---------------------|---------------|
 | Ejder i skärgården  | Q32–34        |
 
+### Frågor med bilder som behöver laddas upp till storage-bucketen:
+| Fråga | Bildtyp              | Förväntad URL                                      |
+|-------|----------------------|----------------------------------------------------|
+| Q8    | Svarsalternativ A–D  | .../8a.png, .../8b.png, .../8c.png, .../8d.png     |
+| Q12   | Bild i frågetext     | .../12.png                                         |
+| Q33   | Svarsalternativ A–D  | .../33a.png, .../33b.png, .../33c.png, .../33d.png |
+
 ### Frågor som behöver skärmdump (ej genererade):
 | Fråga | Anledning                                |
 |-------|------------------------------------------|
@@ -213,19 +220,33 @@ Avsluta alltid med:
 | Q18   | Beräknat svar (X) matchar inte facit (Y) |
 ```
 
-Om inga frågor saknades och inga DTK-material finns:
+Om inga frågor saknades och inga DTK-material finns och inga bilder behöver laddas upp:
 
 ```
 ## Kräver manuell åtgärd
-Inga DTK-material i detta provpass. Inga frågor saknas.
+Inga DTK-material i detta provpass. Inga bilder att ladda upp. Inga frågor saknas.
 ```
 
-Om DTK-material finns men inga frågor saknas:
+Om DTK-material finns och/eller bilder behöver laddas upp men inga frågor saknas:
 
 ```
 ## Kräver manuell åtgärd
 Fyll i image_urls för DTK-material efter bilduppladdning (se materials-inserts ovan).
+
+### Frågor med bilder som behöver laddas upp till storage-bucketen:
+| Fråga | Bildtyp              | Förväntad URL                                  |
+|-------|----------------------|------------------------------------------------|
+| Q8    | Svarsalternativ A–D  | .../8a.png, .../8b.png, .../8c.png, .../8d.png |
 ```
+
+⚠️ **OBS:** Vissa bilder i provhäftet kan missas om de inte är synliga i PDF-extraheringen. Granska alltid SQL-filen manuellt och komplettera `image_url` vid behov.
+
+**Regler för tabellen "Frågor med bilder":**
+
+- Ta med alla frågor där `image_url` eller något `options[i].image` har genererats i SQL:en
+- Inkludera även DTK-frågor som har en egen `image_url` (undantagsfallet enligt DTK-reglerna)
+- Skriv ut de exakta förväntade filnamnen (förkorta bas-URL:en med `...` för läsbarhet)
+- Om en fråga har både frågebild och bildalternativ: lista dem på samma rad
 
 ---
 

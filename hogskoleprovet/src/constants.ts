@@ -66,8 +66,10 @@ export const CATEGORY_META: Record<string, CategoryMeta> = {
 export function parseOptions(raw: unknown): Option[] {
   // If + try catch för säkerhet
   if (Array.isArray(raw)) return raw as Option[];
+  if (typeof raw !== "string") return [];
   try {
-    return JSON.parse(raw as string) as Option[];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
