@@ -114,3 +114,12 @@ För varje fråga där uttrycket kan läsas: lös frågan och kontrollera att be
 
 - Matchar ✅ → generera insert normalt, utan att visa uträkningen
 - Matchar inte ❌ → generera **inte** insert. Lägg frågan i listan över utestående frågor med kommentaren "beräknat svar ([X]) matchar inte facit ([Y])" och visa uträkningen. **Vänta** med att generera SQL-filen tills skärmdump har mottagits och verifierats.
+
+### Steg 2b – Matchar fortfarande inte efter skärmdump
+
+Om beräknat svar inte matchar facit även efter att skärmdump mottagits:
+
+- Ifrågasätt **avläsningen av bilden** – inte facit
+- Redovisa avläsningen explicit: "Jag läser uttrycket som [X]"
+- Be användaren bekräfta att avläsningen stämmer innan insert genereras
+- Generera **inte** insert förrän avläsningen är bekräftad
